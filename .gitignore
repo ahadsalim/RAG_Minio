@@ -1,0 +1,22 @@
+# Environment variables (contains sensitive credentials)
+.env
+
+# MinIO credentials file (generated during installation)
+CREDENTIALS.txt
+
+# Backup files
+*.tar.gz
+/opt/backups/
+
+# Docker volumes
+minio_data/
+
+# Logs
+*.log
+/var/log/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+.DS_Store
