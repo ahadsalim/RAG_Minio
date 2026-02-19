@@ -266,48 +266,47 @@ CRON_EOF
 # =============================================================================
 
 
-show_ingest_config() {
-    print_header "🔗 تنظیمات اتصال سرور Ingest"
+show_service_accounts() {
+    print_header "� اطلاعات Service Account‌ها"
     
     source "$SCRIPT_DIR/.env"
     
     echo ""
-    echo -e "${BOLD}این مقادیر را در فایل .env سرور Ingest وارد کنید:${NC}"
+    echo -e "${BOLD}سه Service Account با دسترسی‌های مجزا ایجاد شد:${NC}"
     echo ""
     echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo -e "${CYAN}# MinIO Storage (Internal Server)"
-    echo -e "AWS_ACCESS_KEY_ID=${GREEN}${SERVICE_ACCESS_KEY}${NC}"
-    echo -e "${CYAN}AWS_SECRET_ACCESS_KEY=${GREEN}${SERVICE_SECRET_KEY}${NC}"
-    echo -e "${CYAN}AWS_STORAGE_BUCKET_NAME=${GREEN}${BUCKET_NAME}${NC}"
-    echo -e "${CYAN}AWS_S3_ENDPOINT_URL=${GREEN}http://${DMZ_IP}:9000${NC}"
-    echo -e "${CYAN}AWS_S3_REGION_NAME=${GREEN}us-east-1${NC}"
-    echo -e "${CYAN}AWS_S3_USE_SSL=${GREEN}false${NC}"
-    echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo -e "${CYAN}1️⃣  Ingest System (دسترسی به: ingest-system)${NC}"
+    echo -e "   AWS_ACCESS_KEY_ID=${GREEN}${INGEST_ACCESS_KEY}${NC}"
+    echo -e "   AWS_SECRET_ACCESS_KEY=${GREEN}${INGEST_SECRET_KEY}${NC}"
+    echo -e "   AWS_STORAGE_BUCKET_NAME=${GREEN}${BUCKET_INGEST}${NC}"
+    echo -e "   AWS_S3_ENDPOINT_URL=${GREEN}http://${DMZ_IP}:9000${NC}"
     echo ""
-    echo -e "${BOLD}⚠️  بعد از تنظیم .env در سرور Ingest:${NC}"
-    echo -e "   ${CYAN}cd /srv && sudo docker compose -f deployment/docker-compose.ingest.yml up -d web worker beat${NC}"
+    echo -e "${CYAN}2️⃣  Central System (دسترسی به: temp-userfile, users-system)${NC}"
+    echo -e "   AWS_ACCESS_KEY_ID=${GREEN}${CENTRAL_ACCESS_KEY}${NC}"
+    echo -e "   AWS_SECRET_ACCESS_KEY=${GREEN}${CENTRAL_SECRET_KEY}${NC}"
+    echo -e "   AWS_S3_ENDPOINT_URL=${GREEN}http://${DMZ_IP}:9000${NC}"
+    echo ""
+    echo -e "${CYAN}3️⃣  Users System (دسترسی به: temp-userfile, users-system)${NC}"
+    echo -e "   AWS_ACCESS_KEY_ID=${GREEN}${USERS_ACCESS_KEY}${NC}"
+    echo -e "   AWS_SECRET_ACCESS_KEY=${GREEN}${USERS_SECRET_KEY}${NC}"
+    echo -e "   AWS_S3_ENDPOINT_URL=${GREEN}http://${DMZ_IP}:9000${NC}"
+    echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 }
 
 show_credentials() {
-    print_header "🔐 اطلاعات دسترسی"
+    print_header "🔐 اطلاعات دسترسی Root"
     
     source "$SCRIPT_DIR/.env"
     
     echo ""
-    echo -e "${BOLD}اطلاعات زیر را در جای امن ذخیره کنید:${NC}"
+    echo -e "${BOLD}اطلاعات Root MinIO (مدیریت کنسول):${NC}"
     echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo -e "  ${CYAN}MinIO Root:${NC}"
-    echo -e "    User:     ${GREEN}minioadmin${NC}"
-    echo -e "    Password: ${GREEN}${MINIO_ROOT_PASSWORD}${NC}"
+    echo -e "  ${CYAN}Username:${NC}  ${GREEN}minioadmin${NC}"
+    echo -e "  ${CYAN}Password:${NC}  ${GREEN}${MINIO_ROOT_PASSWORD}${NC}"
     echo ""
-    echo -e "  ${CYAN}Service Account (for Ingest):${NC}"
-    echo -e "    Access Key: ${GREEN}${SERVICE_ACCESS_KEY}${NC}"
-    echo -e "    Secret Key: ${GREEN}${SERVICE_SECRET_KEY}${NC}"
-    echo ""
-    echo -e "  ${CYAN}Addresses:${NC}"
-    echo -e "    S3 API:   ${GREEN}http://${DMZ_IP}:9000${NC}"
-    echo -e "    Console:  ${GREEN}http://${DMZ_IP}:9001${NC}"
+    echo -e "  ${CYAN}Console:${NC}   ${GREEN}http://${DMZ_IP}:9001${NC}"
+    echo -e "  ${CYAN}S3 API:${NC}    ${GREEN}http://${DMZ_IP}:9000${NC}"
     echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     
@@ -317,19 +316,32 @@ show_credentials() {
 # Generated: $(date)
 # ⚠️ این فایل را در جای امن ذخیره کنید و سپس حذف کنید!
 
-MinIO Root:
-  User: minioadmin
+MinIO Root (Console Admin):
+  Username: minioadmin
   Password: ${MINIO_ROOT_PASSWORD}
 
-Service Account (for Ingest server):
-  Access Key: ${SERVICE_ACCESS_KEY}
-  Secret Key: ${SERVICE_SECRET_KEY}
+Buckets:
+  - ingest-system
+  - temp-userfile
+  - users-system
+
+Service Accounts:
+
+1. Ingest System (access: ingest-system):
+   Access Key: ${INGEST_ACCESS_KEY}
+   Secret Key: ${INGEST_SECRET_KEY}
+
+2. Central System (access: temp-userfile, users-system):
+   Access Key: ${CENTRAL_ACCESS_KEY}
+   Secret Key: ${CENTRAL_SECRET_KEY}
+
+3. Users System (access: temp-userfile, users-system):
+   Access Key: ${USERS_ACCESS_KEY}
+   Secret Key: ${USERS_SECRET_KEY}
 
 Addresses:
   S3 API: http://${DMZ_IP}:9000
   Console: http://${DMZ_IP}:9001
-
-Bucket: ${BUCKET_NAME}
 EOF
     chmod 600 "$SCRIPT_DIR/CREDENTIALS.txt"
     print_warning "اطلاعات در فایل CREDENTIALS.txt ذخیره شد. آن را در جای امن نگه دارید!"
@@ -397,15 +409,15 @@ main() {
     print_header "✅ نصب با موفقیت انجام شد!"
     
     show_credentials
-    show_ingest_config
+    show_service_accounts
     show_useful_commands
     
     echo ""
     print_success "🎉 سرور MinIO آماده استفاده است!"
     echo ""
     print_warning "مراحل بعدی:"
-    echo "  1. مقادیر اتصال را در .env سرور Ingest وارد کنید"
-    echo "  2. سرویس‌های Ingest را restart کنید"
+    echo "  1. مقادیر Service Account‌ها را در .env سیستم‌های مربوطه وارد کنید"
+    echo "  2. سرویس‌های مربوطه را restart کنید"
     echo ""
 }
 
