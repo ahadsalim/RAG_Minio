@@ -46,9 +46,15 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - BUCKET_NAME=${BUCKET_NAME:-ingest-system}
-      - SERVICE_ACCESS_KEY=${SERVICE_ACCESS_KEY}
-      - SERVICE_SECRET_KEY=${SERVICE_SECRET_KEY}
+      - BUCKET_INGEST=${BUCKET_INGEST:-ingest-system}
+      - BUCKET_TEMP=${BUCKET_TEMP:-temp-userfile}
+      - BUCKET_USERS=${BUCKET_USERS:-users-system}
+      - INGEST_ACCESS_KEY=${INGEST_ACCESS_KEY}
+      - INGEST_SECRET_KEY=${INGEST_SECRET_KEY}
+      - CENTRAL_ACCESS_KEY=${CENTRAL_ACCESS_KEY}
+      - CENTRAL_SECRET_KEY=${CENTRAL_SECRET_KEY}
+      - USERS_ACCESS_KEY=${USERS_ACCESS_KEY}
+      - USERS_SECRET_KEY=${USERS_SECRET_KEY}
     entrypoint: ["/bin/sh", "/minio-init.sh"]
     depends_on:
       minio:
