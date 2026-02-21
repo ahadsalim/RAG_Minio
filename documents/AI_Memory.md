@@ -58,8 +58,25 @@ docker compose ps             # Status
       labels: {server: minio-dedicated}
 ```
 
+## Cache Server Configuration
+- **Cache Server IP**: 10.10.10.111
+- **Purpose**: Internal cache for Docker images and packages (offline capability)
+- **Docker daemon.json**: `/etc/docker/daemon.json` configured with registry mirrors
+- **All Docker images**: Configured to pull from cache server
+  - Docker Hub images: `10.10.10.111:5001`
+  - Quay.io images: `10.10.10.111:5003`
+- **Documentation**: `/srv/CACHE-SERVER-SETUP.md`
+
+### Images Using Cache
+- MinIO: `10.10.10.111:5001/minio/minio:latest`
+- MinIO Client: `10.10.10.111:5001/minio/mc:latest`
+- Node Exporter: `10.10.10.111:5003/prom/node-exporter:latest` (Quay.io)
+- cAdvisor: `10.10.10.111:5001/zcube/cadvisor:latest`
+- Promtail: `10.10.10.111:5001/grafana/promtail:latest`
+
 ## Important Notes
 - cAdvisor: Use zcube/cadvisor (not google/cadvisor) for cgroup v2 compatibility
 - All exporters use network_mode: host for direct system access
 - Container names: deployment-minio-1, node-exporter, cadvisor, promtail
 - Promtail adds server=minio label to all logs
+- **Cache server must be configured before deployment** - copy daemon.json to /etc/docker/daemon.json and restart Docker
