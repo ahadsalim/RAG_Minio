@@ -46,32 +46,42 @@ sudo systemctl status docker
 
 | تصویر اصلی | تصویر از Cache | پورت Cache |
 |-----------|----------------|------------|
-| `minio/minio:latest` | `10.10.10.111:5001/minio/minio:latest` | 5001 (Docker Hub) |
-| `minio/mc:latest` | `10.10.10.111:5001/minio/mc:latest` | 5001 (Docker Hub) |
-| `prom/node-exporter:latest` | `10.10.10.111:5003/prom/node-exporter:latest` | 5003 (Quay.io) |
-| `zcube/cadvisor:latest` | `10.10.10.111:5001/zcube/cadvisor:latest` | 5001 (Docker Hub) |
-| `grafana/promtail:latest` | `10.10.10.111:5001/grafana/promtail:latest` | 5001 (Docker Hub) |
+| `minio/minio:latest` | `10.10.10.111:5003/minio/minio:latest` | 5003 (Quay.io mirror) |
+| `minio/mc:latest` | `10.10.10.111:5003/minio/mc:latest` | 5003 (Quay.io mirror) |
+| `prom/node-exporter:latest` | `10.10.10.111:5003/prom/node-exporter:latest` | 5003 (Quay.io mirror) |
+| `zcube/cadvisor:latest` | `10.10.10.111:5003/zcube/cadvisor:latest` | 5003 (Quay.io mirror) |
+| `grafana/promtail:latest` | `10.10.10.111:5003/grafana/promtail:latest` | 5003 (Quay.io mirror) |
+
+**نکته:** همه تصاویر این پروژه در Quay.io mirror (پورت 5003) ذخیره شده‌اند.
 
 ---
 
 ## ۳. اطمینان از وجود تصاویر در Cache
 
-برای اطمینان از اینکه تمام تصاویر در cache موجود هستند، روی **سرور cache (10.10.10.111)** دستورات زیر را اجرا کنید:
+✅ **تمام تصاویر از قبل در cache موجود هستند!**
 
+بررسی تصاویر موجود در cache:
 ```bash
-# اضافه کردن تصاویر به cache
+# لیست تصاویر موجود در Quay.io mirror
+curl -s http://10.10.10.111:5003/v2/_catalog | jq -r '.repositories[]' | grep -E 'minio|node-exporter|cadvisor|promtail'
+```
+
+خروجی:
+```
+grafana/promtail
+minio/mc
+minio/minio
+prom/node-exporter
+zcube/cadvisor
+```
+
+اگر تصویری موجود نبود، روی **سرور cache (10.10.10.111)** اضافه کنید:
+```bash
 cd /srv/cache
-
-# تصاویر Docker Hub
-bash scripts/add-image.sh minio/minio:latest
-bash scripts/add-image.sh minio/mc:latest
-bash scripts/add-image.sh zcube/cadvisor:latest
-bash scripts/add-image.sh grafana/promtail:latest
-
-# تصاویر Quay.io
-docker pull quay.io/prometheus/node-exporter:latest
-docker tag quay.io/prometheus/node-exporter:latest localhost:5003/prometheus/node-exporter:latest
-docker push localhost:5003/prometheus/node-exporter:latest
+# مثال برای اضافه کردن تصویر جدید
+docker pull <image-name>:latest
+docker tag <image-name>:latest localhost:5003/<image-name>:latest
+docker push localhost:5003/<image-name>:latest
 ```
 
 ---

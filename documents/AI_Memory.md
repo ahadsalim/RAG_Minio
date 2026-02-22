@@ -62,17 +62,15 @@ docker compose ps             # Status
 - **Cache Server IP**: 10.10.10.111
 - **Purpose**: Internal cache for Docker images and packages (offline capability)
 - **Docker daemon.json**: `/etc/docker/daemon.json` configured with registry mirrors
-- **All Docker images**: Configured to pull from cache server
-  - Docker Hub images: `10.10.10.111:5001`
-  - Quay.io images: `10.10.10.111:5003`
-- **Documentation**: `/srv/CACHE-SERVER-SETUP.md`
+- **All Docker images**: Configured to pull from cache server port 5003 (Quay.io mirror)
+- **Test Result**: All images pulled successfully in 0.888s ✅
 
-### Images Using Cache
-- MinIO: `10.10.10.111:5001/minio/minio:latest`
-- MinIO Client: `10.10.10.111:5001/minio/mc:latest`
-- Node Exporter: `10.10.10.111:5003/prom/node-exporter:latest` (Quay.io)
-- cAdvisor: `10.10.10.111:5001/zcube/cadvisor:latest`
-- Promtail: `10.10.10.111:5001/grafana/promtail:latest`
+### Images Using Cache (All from port 5003)
+- MinIO: `10.10.10.111:5003/minio/minio:latest`
+- MinIO Client: `10.10.10.111:5003/minio/mc:latest`
+- Node Exporter: `10.10.10.111:5003/prom/node-exporter:latest`
+- cAdvisor: `10.10.10.111:5003/zcube/cadvisor:latest`
+- Promtail: `10.10.10.111:5003/grafana/promtail:latest`
 
 ## Important Notes
 - cAdvisor: Use zcube/cadvisor (not google/cadvisor) for cgroup v2 compatibility

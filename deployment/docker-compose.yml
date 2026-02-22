@@ -20,7 +20,7 @@ services:
   # MinIO Object Storage
   # =========================================================================
   minio:
-    image: 10.10.10.111:5001/minio/minio:latest
+    image: 10.10.10.111:5003/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001" --address ":9000"
     ports:
@@ -40,7 +40,7 @@ services:
     networks: [ minio_net ]
 
   minio-init:
-    image: 10.10.10.111:5001/minio/mc:latest
+    image: 10.10.10.111:5003/minio/mc:latest
     volumes:
       - ./minio-init.sh:/minio-init.sh
     environment:
@@ -82,7 +82,7 @@ services:
       - /sys:/host/sys:ro
 
   cadvisor:
-    image: 10.10.10.111:5001/zcube/cadvisor:latest
+    image: 10.10.10.111:5003/zcube/cadvisor:latest
     container_name: cadvisor
     restart: unless-stopped
     network_mode: host
@@ -96,7 +96,7 @@ services:
       - /etc/machine-id:/etc/machine-id:ro
 
   promtail:
-    image: 10.10.10.111:5001/grafana/promtail:latest
+    image: 10.10.10.111:5003/grafana/promtail:latest
     container_name: promtail
     restart: unless-stopped
     network_mode: host
