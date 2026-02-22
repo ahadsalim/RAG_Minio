@@ -53,39 +53,39 @@ generate_password() {
 # =============================================================================
 
 ask_cache_server() {
-    print_header "🌐 انتخاب منبع دانلود"
+    print_header "🌐 Download Source Selection"
     
     echo ""
-    echo "از کجا تصاویر Docker و بسته‌ها دانلود شوند؟"
+    echo "Where should Docker images and packages be downloaded from?"
     echo ""
-    echo "  1) اینترنت مستقیم (نیاز به اتصال اینترنت دارد)"
-    echo "  2) سرور کش داخلی (برای محیط بدون اینترنت)"
+    echo "  1) Direct Internet (requires internet connection)"
+    echo "  2) Internal Cache Server (for offline environment)"
     echo ""
     
     while true; do
-        read -p "انتخاب شما (1 یا 2): " choice
+        read -p "Your choice (1 or 2): " choice
         case $choice in
             1)
                 USE_CACHE_SERVER="no"
-                print_info "از اینترنت مستقیم استفاده می‌شود"
+                print_info "Using direct internet"
                 break
                 ;;
             2)
                 USE_CACHE_SERVER="yes"
-                read -p "آدرس IP سرور کش [10.10.10.111]: " CACHE_SERVER_IP
+                read -p "Cache server IP address [10.10.10.111]: " CACHE_SERVER_IP
                 CACHE_SERVER_IP=${CACHE_SERVER_IP:-10.10.10.111}
                 
                 # Test cache server connectivity
-                print_step "بررسی اتصال به سرور کش..."
+                print_step "Testing cache server connectivity..."
                 if ping -c 1 -W 2 "$CACHE_SERVER_IP" >/dev/null 2>&1; then
-                    print_success "سرور کش در دسترس است: $CACHE_SERVER_IP"
+                    print_success "Cache server is reachable: $CACHE_SERVER_IP"
                 else
-                    print_warning "سرور کش پاسخ نمی‌دهد، اما ادامه می‌دهیم..."
+                    print_warning "Cache server not responding, but continuing..."
                 fi
                 break
                 ;;
             *)
-                print_error "لطفاً 1 یا 2 را انتخاب کنید"
+                print_error "Please select 1 or 2"
                 ;;
         esac
     done
@@ -96,11 +96,11 @@ configure_docker_for_cache() {
         return
     fi
     
-    print_header "تنظیم Docker برای استفاده از Cache Server"
+    print_header "Configuring Docker for Cache Server"
     
     local daemon_json="/etc/docker/daemon.json"
     
-    print_step "ایجاد فایل $daemon_json..."
+    print_step "Creating $daemon_json file..."
     
     cat > "$daemon_json" << EOF
 {
@@ -117,14 +117,14 @@ configure_docker_for_cache() {
 }
 EOF
     
-    print_success "فایل daemon.json ایجاد شد"
+    print_success "daemon.json file created"
     
     # Restart Docker if it's already running
     if systemctl is-active --quiet docker; then
-        print_step "ریستارت Docker برای اعمال تنظیمات..."
+        print_step "Restarting Docker to apply settings..."
         systemctl restart docker
         sleep 3
-        print_success "Docker ریستارت شد"
+        print_success "Docker restarted"
     fi
 }
 
@@ -133,16 +133,16 @@ update_compose_images() {
         return
     fi
     
-    print_header "به‌روزرسانی تصاویر Docker در docker-compose.yml"
+    print_header "Updating Docker Images in docker-compose.yml"
     
     local compose_file="$SCRIPT_DIR/docker-compose.yml"
     
     if [ ! -f "$compose_file" ]; then
-        print_error "فایل docker-compose.yml یافت نشد!"
+        print_error "docker-compose.yml file not found!"
         return
     fi
     
-    print_step "تغییر تصاویر به cache server..."
+    print_step "Changing images to cache server..."
     
     # Backup original
     cp "$compose_file" "$compose_file.backup"
@@ -161,7 +161,7 @@ update_compose_images() {
     sed -i "s|image: [0-9.]*:500[0-9]/zcube/cadvisor:latest|image: ${CACHE_SERVER_IP}:5003/zcube/cadvisor:latest|g" "$compose_file"
     sed -i "s|image: [0-9.]*:500[0-9]/grafana/promtail:latest|image: ${CACHE_SERVER_IP}:5003/grafana/promtail:latest|g" "$compose_file"
     
-    print_success "تصاویر به‌روز شدند (استفاده از ${CACHE_SERVER_IP}:5003)"
+    print_success "Images updated (using ${CACHE_SERVER_IP}:5003)"
 }
 
 # =============================================================================
@@ -170,33 +170,33 @@ update_compose_images() {
 
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        print_error "این اسکریپت باید با دسترسی root اجرا شود"
-        echo "لطفاً با sudo اجرا کنید: sudo bash $0"
+        print_error "This script must be run with root access"
+        echo "Please run with sudo: sudo bash $0"
         exit 1
     fi
 }
 
 check_system() {
-    print_header "بررسی پیش‌نیازها"
+    print_header "Checking Prerequisites"
     
     local ram_gb=$(free -g | awk '/^Mem:/{print $2}')
     if [ "$ram_gb" -lt 2 ]; then
-        print_warning "RAM کمتر از 2GB است. حداقل 4GB توصیه می‌شود."
+        print_warning "RAM is less than 2GB. Minimum 4GB recommended."
     else
         print_success "RAM: ${ram_gb}GB"
     fi
     
     local disk_gb=$(df -BG / | awk 'NR==2 {print $4}' | tr -d 'G')
     if [ "$disk_gb" -lt 20 ]; then
-        print_error "فضای دیسک کافی نیست. حداقل 20GB نیاز است."
+        print_error "Insufficient disk space. Minimum 20GB required."
         exit 1
     else
-        print_success "فضای دیسک آزاد: ${disk_gb}GB"
+        print_success "Free disk space: ${disk_gb}GB"
     fi
     
     for port in 9000 9001; do
         if ss -tuln 2>/dev/null | grep -q ":$port "; then
-            print_warning "پورت $port در حال استفاده است"
+            print_warning "Port $port is already in use"
         fi
     done
 }
@@ -206,17 +206,17 @@ check_system() {
 # =============================================================================
 
 install_docker() {
-    print_header "نصب Docker"
+    print_header "Installing Docker"
     
     if command -v docker &> /dev/null; then
-        print_info "Docker قبلاً نصب شده است"
+        print_info "Docker is already installed"
         docker --version
     else
-        print_step "نصب Docker..."
+        print_step "Installing Docker..."
         
         if [ "$USE_CACHE_SERVER" = "yes" ]; then
             # Configure apt to use cache server
-            print_step "تنظیم apt برای استفاده از cache server..."
+            print_step "Configuring apt to use cache server..."
             echo "Acquire::http::Proxy \"http://${CACHE_SERVER_IP}:3142\";" > /etc/apt/apt.conf.d/00proxy
             echo "Acquire::https::Proxy \"http://${CACHE_SERVER_IP}:3142\";" >> /etc/apt/apt.conf.d/00proxy
         fi
@@ -226,7 +226,7 @@ install_docker() {
         
         if [ "$USE_CACHE_SERVER" = "yes" ]; then
             # Get Docker GPG key from cache server
-            print_step "دریافت Docker GPG key از cache server..."
+            print_step "Getting Docker GPG key from cache server..."
             curl -fsSL "http://${CACHE_SERVER_IP}/keys/docker.gpg" | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
         else
             # Get Docker GPG key from internet
@@ -241,7 +241,7 @@ install_docker() {
         systemctl enable docker
         systemctl start docker
         
-        print_success "Docker نصب شد"
+        print_success "Docker installed"
     fi
     
     # Configure Docker for cache server after installation
@@ -253,13 +253,13 @@ install_docker() {
 # =============================================================================
 
 configure_env() {
-    print_header "تنظیمات MinIO"
+    print_header "MinIO Configuration"
     
     local env_file="$SCRIPT_DIR/.env"
     
     # Check if .env already has real values
     if [ -f "$env_file" ] && ! grep -q "CHANGE_ME" "$env_file" 2>/dev/null; then
-        print_info "فایل .env قبلاً تنظیم شده است"
+        print_info ".env file already configured"
         source "$env_file"
         return
     fi
@@ -277,10 +277,10 @@ configure_env() {
     
     # Ask for IPs
     echo ""
-    read -p "IP داخلی (LAN) این سرور [192.168.100.105]: " LAN_IP
+    read -p "Internal LAN IP of this server [192.168.100.105]: " LAN_IP
     LAN_IP=${LAN_IP:-192.168.100.105}
     
-    read -p "IP منطقه DMZ این سرور [10.10.10.50]: " DMZ_IP
+    read -p "DMZ IP of this server [10.10.10.50]: " DMZ_IP
     DMZ_IP=${DMZ_IP:-10.10.10.50}
     
     # Write .env
@@ -321,7 +321,7 @@ EOF
     # Source the new env
     source "$env_file"
     
-    print_success "فایل تنظیمات ایجاد شد"
+    print_success "Configuration file created"
 }
 
 # =============================================================================
@@ -329,20 +329,20 @@ EOF
 # =============================================================================
 
 deploy_services() {
-    print_header "اجرای سرویس‌ها"
+    print_header "Deploying Services"
     
     cd "$SCRIPT_DIR"
     
     # Update docker-compose.yml if using cache server
     update_compose_images
     
-    print_step "دریافت تصاویر Docker..."
+    print_step "Pulling Docker images..."
     docker compose pull
     
-    print_step "اجرای MinIO..."
+    print_step "Starting MinIO..."
     docker compose up -d
     
-    print_step "انتظار برای آماده شدن MinIO..."
+    print_step "Waiting for MinIO to be ready..."
     local max_attempts=30
     local attempt=1
     while [ $attempt -le $max_attempts ]; do
@@ -354,25 +354,25 @@ deploy_services() {
     done
     
     if [ $attempt -gt $max_attempts ]; then
-        print_error "MinIO آماده نشد. لاگ‌ها را بررسی کنید: docker compose logs minio"
+        print_error "MinIO failed to start. Check logs: docker compose logs minio"
         exit 1
     fi
     
-    print_success "MinIO آماده است"
+    print_success "MinIO is ready"
     
     # Wait for minio-init to complete
-    print_step "اجرای minio-init (ساخت bucket و service account)..."
+    print_step "Running minio-init (creating buckets and service accounts)..."
     sleep 10
     docker compose logs minio-init 2>/dev/null || true
     
-    print_success "سرویس‌ها اجرا شدند"
+    print_success "Services deployed successfully"
 }
 
 configure_firewall() {
-    print_header "تنظیم فایروال"
+    print_header "Configuring Firewall"
     
     if ! command -v ufw >/dev/null 2>&1; then
-        print_warning "UFW نصب نیست. نصب می‌شود..."
+        print_warning "UFW not installed. Installing..."
         apt install -y -qq ufw
     fi
     
@@ -390,12 +390,12 @@ configure_firewall() {
     
     ufw --force enable
     
-    print_success "فایروال تنظیم شد"
-    print_info "پورت‌های باز: 9000 (S3), 9001 (Console), 9100 (Node Exporter), 8080 (cAdvisor)"
+    print_success "Firewall configured"
+    print_info "Open ports: 9000 (S3), 9001 (Console), 9100 (Node Exporter), 8080 (cAdvisor)"
 }
 
 setup_backup_cron() {
-    print_header "تنظیم Backup خودکار"
+    print_header "Setting Up Automatic Backup"
     
     if [ -f "$SCRIPT_DIR/backup_minio.sh" ]; then
         chmod +x "$SCRIPT_DIR/backup_minio.sh"
@@ -411,9 +411,9 @@ setup_backup_cron() {
 CRON_EOF
         ) | crontab -
         
-        print_success "Cron Jobs تنظیم شد: 4:00 AM و 4:00 PM UTC"
+        print_success "Cron jobs configured: 4:00 AM and 4:00 PM UTC"
     else
-        print_warning "فایل backup_minio.sh یافت نشد. Backup خودکار تنظیم نشد."
+        print_warning "backup_minio.sh file not found. Automatic backup not configured."
     fi
 }
 
@@ -422,26 +422,26 @@ CRON_EOF
 # =============================================================================
 
 show_service_accounts() {
-    print_header "🔑 اطلاعات Service Account‌ها"
+    print_header "🔑 Service Account Information"
     
     source "$SCRIPT_DIR/.env"
     
     echo ""
-    echo -e "${BOLD}سه Service Account با دسترسی‌های مجزا ایجاد شد:${NC}"
+    echo -e "${BOLD}Three Service Accounts created with separate access:${NC}"
     echo ""
     echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo -e "${CYAN}1️⃣  Ingest System (دسترسی به: ingest-system)${NC}"
+    echo -e "${CYAN}1️⃣  Ingest System (access to: ingest-system)${NC}"
     echo -e "   AWS_ACCESS_KEY_ID=${GREEN}${INGEST_ACCESS_KEY}${NC}"
     echo -e "   AWS_SECRET_ACCESS_KEY=${GREEN}${INGEST_SECRET_KEY}${NC}"
     echo -e "   AWS_STORAGE_BUCKET_NAME=${GREEN}${BUCKET_INGEST}${NC}"
     echo -e "   AWS_S3_ENDPOINT_URL=${GREEN}http://${DMZ_IP}:9000${NC}"
     echo ""
-    echo -e "${CYAN}2️⃣  Central System (دسترسی به: temp-userfile, users-system)${NC}"
+    echo -e "${CYAN}2️⃣  Central System (access to: temp-userfile, users-system)${NC}"
     echo -e "   AWS_ACCESS_KEY_ID=${GREEN}${CENTRAL_ACCESS_KEY}${NC}"
     echo -e "   AWS_SECRET_ACCESS_KEY=${GREEN}${CENTRAL_SECRET_KEY}${NC}"
     echo -e "   AWS_S3_ENDPOINT_URL=${GREEN}http://${DMZ_IP}:9000${NC}"
     echo ""
-    echo -e "${CYAN}3️⃣  Users System (دسترسی به: temp-userfile, users-system)${NC}"
+    echo -e "${CYAN}3️⃣  Users System (access to: temp-userfile, users-system)${NC}"
     echo -e "   AWS_ACCESS_KEY_ID=${GREEN}${USERS_ACCESS_KEY}${NC}"
     echo -e "   AWS_SECRET_ACCESS_KEY=${GREEN}${USERS_SECRET_KEY}${NC}"
     echo -e "   AWS_S3_ENDPOINT_URL=${GREEN}http://${DMZ_IP}:9000${NC}"
@@ -450,12 +450,12 @@ show_service_accounts() {
 }
 
 show_credentials() {
-    print_header "🔐 اطلاعات دسترسی Root"
+    print_header "🔐 Root Access Credentials"
     
     source "$SCRIPT_DIR/.env"
     
     echo ""
-    echo -e "${BOLD}اطلاعات Root MinIO (مدیریت کنسول):${NC}"
+    echo -e "${BOLD}MinIO Root Credentials (Console Admin):${NC}"
     echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo -e "  ${CYAN}Username:${NC}  ${GREEN}minioadmin${NC}"
     echo -e "  ${CYAN}Password:${NC}  ${GREEN}${MINIO_ROOT_PASSWORD}${NC}"
@@ -469,7 +469,7 @@ show_credentials() {
     cat > "$SCRIPT_DIR/CREDENTIALS.txt" << EOF
 # MinIO Server Credentials
 # Generated: $(date)
-# ⚠️ این فایل را در جای امن ذخیره کنید و سپس حذف کنید!
+# ⚠️ Save this file in a secure location and then delete it!
 
 MinIO Root (Console Admin):
   Username: minioadmin
@@ -503,24 +503,24 @@ Cache Server Configuration:
   Cache IP: ${CACHE_SERVER_IP}
 EOF
     chmod 600 "$SCRIPT_DIR/CREDENTIALS.txt"
-    print_warning "اطلاعات در فایل CREDENTIALS.txt ذخیره شد. آن را در جای امن نگه دارید!"
+    print_warning "Credentials saved to CREDENTIALS.txt. Keep it in a secure location!"
 }
 
 show_useful_commands() {
-    print_header "🔧 دستورات مفید"
+    print_header "🔧 Useful Commands"
     
     echo ""
-    echo -e "${BOLD}مدیریت سرویس‌ها:${NC}"
-    echo -e "  ${CYAN}docker compose ps${NC}                    # وضعیت سرویس‌ها"
-    echo -e "  ${CYAN}docker compose logs -f minio${NC}         # لاگ MinIO"
-    echo -e "  ${CYAN}docker compose restart minio${NC}         # ریستارت MinIO"
-    echo -e "  ${CYAN}docker compose down${NC}                  # توقف همه"
-    echo -e "  ${CYAN}docker compose up -d${NC}                 # اجرای همه"
+    echo -e "${BOLD}Service Management:${NC}"
+    echo -e "  ${CYAN}docker compose ps${NC}                    # Service status"
+    echo -e "  ${CYAN}docker compose logs -f minio${NC}         # MinIO logs"
+    echo -e "  ${CYAN}docker compose restart minio${NC}         # Restart MinIO"
+    echo -e "  ${CYAN}docker compose down${NC}                  # Stop all"
+    echo -e "  ${CYAN}docker compose up -d${NC}                 # Start all"
     echo ""
     echo -e "${BOLD}Backup:${NC}"
-    echo -e "  ${CYAN}./backup_minio.sh backup${NC}             # بکاپ دستی"
-    echo -e "  ${CYAN}./backup_minio.sh list${NC}               # لیست بکاپ‌ها"
-    echo -e "  ${CYAN}./backup_minio.sh restore <file>${NC}     # ریستور"
+    echo -e "  ${CYAN}./backup_minio.sh backup${NC}             # Manual backup"
+    echo -e "  ${CYAN}./backup_minio.sh list${NC}               # List backups"
+    echo -e "  ${CYAN}./backup_minio.sh restore <file>${NC}     # Restore"
     echo ""
     
     if [ "$USE_CACHE_SERVER" = "yes" ]; then
@@ -537,21 +537,21 @@ show_useful_commands() {
 
 main() {
     clear
-    print_header "🗄️  نصب MinIO (سرور داخلی)"
+    print_header "🗄️  MinIO Installation (Internal Server)"
     
     echo ""
-    echo "این اسکریپت سرور MinIO مستقل را برای شبکه داخلی نصب و تنظیم می‌کند."
+    echo "This script installs and configures a standalone MinIO server for internal network."
     echo ""
-    echo "موارد زیر نصب و تنظیم می‌شوند:"
-    echo "  • Docker و Docker Compose"
+    echo "The following will be installed and configured:"
+    echo "  • Docker and Docker Compose"
     echo "  • MinIO (Object Storage)"
     echo "  • Monitoring Stack (Node Exporter, cAdvisor, Promtail)"
-    echo "  • Bucket و Service Account"
-    echo "  • Backup خودکار"
+    echo "  • Buckets and Service Accounts"
+    echo "  • Automatic Backup"
     echo ""
-    read -p "آیا ادامه می‌دهید؟ (y/N): " confirm
+    read -p "Do you want to continue? (y/N): " confirm
     if [[ ! $confirm =~ ^[Yy]$ ]]; then
-        echo "عملیات لغو شد."
+        echo "Operation cancelled."
         exit 0
     fi
     
@@ -577,18 +577,18 @@ main() {
     # Post-installation
     echo ""
     echo ""
-    print_header "✅ نصب با موفقیت انجام شد!"
+    print_header "✅ Installation Completed Successfully!"
     
     show_credentials
     show_service_accounts
     show_useful_commands
     
     echo ""
-    print_success "🎉 سرور MinIO آماده استفاده است!"
+    print_success "🎉 MinIO Server is ready to use!"
     echo ""
-    print_warning "مراحل بعدی:"
-    echo "  1. مقادیر Service Account‌ها را در .env سیستم‌های مربوطه وارد کنید"
-    echo "  2. سرویس‌های مربوطه را restart کنید"
+    print_warning "Next Steps:"
+    echo "  1. Add Service Account credentials to .env files of respective systems"
+    echo "  2. Restart the respective services"
     echo ""
 }
 
