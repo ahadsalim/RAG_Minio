@@ -30,16 +30,15 @@ scp -r minio-server/ ahad@10.10.10.50:/srv/
 ssh ahad@10.10.10.50
 
 # 3. اجرای اسکریپت نصب
-cd /srv
-chmod +x minio.sh backup_minio.sh minio-init.sh
-sudo bash minio.sh
+cd /srv/deployment
+sudo bash start.sh
 ```
 
 اسکریپت به صورت تعاملی از شما سوال می‌پرسد:
-- رمز Root MinIO (یا تولید خودکار)
-- Service Account credentials (از قبل دارید یا تولید جدید)
-- IP سرور در شبکه داخلی
-- نام Bucket
+- **منبع دانلود**: اینترنت مستقیم یا سرور کش داخلی
+- **آدرس سرور کش**: در صورت انتخاب گزینه کش (پیش‌فرض: 10.10.10.111)
+- IP سرور در شبکه داخلی (LAN و DMZ)
+- تمام تنظیمات دیگر به صورت خودکار تولید می‌شوند
 
 ---
 
@@ -47,13 +46,18 @@ sudo bash minio.sh
 
 ```
 /srv/
-├── minio.sh              # اسکریپت نصب اصلی (sudo bash minio.sh)
-├── docker-compose.yml    # تعریف سرویس‌ها (MinIO + minio-init)
-├── .env                  # تنظیمات (تولید می‌شود توسط minio.sh)
-├── minio-init.sh         # اسکریپت ساخت bucket و service account
-├── backup_minio.sh       # اسکریپت بکاپ و ریستور
-├── README.md             # این فایل
-└── CREDENTIALS.txt       # اطلاعات دسترسی (تولید می‌شود - حذف کنید بعد از ذخیره)
+├── deployment/
+│   ├── start.sh              # اسکریپت نصب اصلی (sudo bash start.sh)
+│   ├── docker-compose.yml    # تعریف سرویس‌ها (MinIO + Monitoring)
+│   ├── minio-init.sh         # اسکریپت ساخت bucket و service account
+│   ├── backup_minio.sh       # اسکریپت بکاپ و ریستور
+│   └── daemon.json           # تنظیمات Docker برای cache server
+├── documents/
+│   ├── AI_Memory.md          # حافظه پروژه
+│   └── CACHE-SERVER-SETUP.md # راهنمای cache server
+├── .env                      # تنظیمات (تولید می‌شود توسط start.sh)
+├── README.md                 # این فایل
+└── CREDENTIALS.txt           # اطلاعات دسترسی (تولید می‌شود)
 ```
 
 ---
